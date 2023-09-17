@@ -1,0 +1,6 @@
+- path: "src/{{.Hurdle}}Prose.txt"
+  contents: |
+    The quick brown fox jumped over {{.Hurdle}}
+- path: "LICENSE"
+  contents: |
+    This is a license.
