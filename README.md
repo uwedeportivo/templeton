@@ -29,7 +29,7 @@ fence
 └── LICENSE
 ```
 
-The contents of `FenceProse.txt` have `{{.Hurdle}}` replaced with `Fence` as expected.
+The contents of `FenceProse.txt` has `{{.Hurdle}}` replaced with `Fence` as expected.
 
 Both path names and file contents can be templated.
 
