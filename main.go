@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -16,6 +18,7 @@ var (
 	rootDirF  = flag.String("root", "", "root dir of project")
 	dataF     = flag.StringToString("data", nil, "comma-separated key=value pairs")
 	templateF = flag.String("template", "", "path to a yaml template to execute")
+	projectF  = flag.String("project", "", "looks for a template in ~/.templeton/<project>.yaml")
 )
 
 type FileTemplate struct {
@@ -65,12 +68,27 @@ func (ttn *Templeton) Process(ft *FileTemplate) error {
 func main() {
 	flag.Parse()
 
+	if *templateF == "" && *projectF == "" {
+		log.Fatal(errors.New("no yaml template specified. use --template or --project to specify one"))
+	}
+
 	ttn := Templeton{
 		root: *rootDirF,
 		data: *dataF,
 	}
 
-	file, err := os.ReadFile(*templateF)
+	templateToUse := *templateF
+	if templateToUse == "" {
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		homedir := filepath.Join(usr.HomeDir, ".templeton")
+
+		templateToUse = filepath.Join(homedir, *projectF+".yaml")
+	}
+
+	file, err := os.ReadFile(templateToUse)
 	if err != nil {
 		log.Fatal(err)
 	}
