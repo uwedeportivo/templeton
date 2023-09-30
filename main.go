@@ -24,6 +24,7 @@ var (
 type FileTemplate struct {
 	Path     string
 	Contents string
+	Delims   []string
 }
 
 type Templeton struct {
@@ -37,7 +38,7 @@ func (ttn *Templeton) Process(ft *FileTemplate) error {
 		"ToLower": strings.ToLower,
 	}
 
-	pathTpl, err := template.New(ft.Path).Funcs(funcMap).Parse(ft.Path)
+	pathTpl, err := template.New(ft.Path).Funcs(funcMap).Delims(ft.Delims[0], ft.Delims[1]).Parse(ft.Path)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func (ttn *Templeton) Process(ft *FileTemplate) error {
 	}
 	path := buf.String()
 
-	tpl, err := template.New(path).Funcs(funcMap).Parse(ft.Contents)
+	tpl, err := template.New(path).Funcs(funcMap).Delims(ft.Delims[0], ft.Delims[1]).Parse(ft.Contents)
 	if err != nil {
 		return err
 	}
@@ -101,6 +102,9 @@ func main() {
 	}
 
 	for _, ft := range fts {
+		if ft.Delims == nil {
+			ft.Delims = []string{"{{", "}}"}
+		}
 		err = ttn.Process(ft)
 		if err != nil {
 			log.Fatal(err)
