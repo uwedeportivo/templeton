@@ -48,6 +48,7 @@ func (ttn *Templeton) Process(ft *FileTemplate) error {
 		"ToUpper": strings.ToUpper,
 		"ToLower": strings.ToLower,
 		"ToTitle": ToTile,
+		"split":   strings.Split,
 	}
 
 	pathTpl, err := template.New(ft.Path).Funcs(funcMap).Delims(ft.Delims[0], ft.Delims[1]).Parse(ft.Path)
@@ -162,7 +163,13 @@ func main() {
 }
 
 func ExtractKeys(tplContent string, delims []string) ([]string, error) {
-	tpl, err := template.New("temp").Delims(delims[0], delims[1]).Parse(tplContent)
+	funcMap := template.FuncMap{
+		"ToUpper": strings.ToUpper,
+		"ToLower": strings.ToLower,
+		"ToTitle": ToTile,
+		"split":   strings.Split,
+	}
+	tpl, err := template.New("temp").Funcs(funcMap).Delims(delims[0], delims[1]).Parse(tplContent)
 	if err != nil {
 		return nil, err
 	}
