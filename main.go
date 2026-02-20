@@ -11,6 +11,8 @@ import (
 	"text/template"
 
 	flag "github.com/spf13/pflag"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,10 +34,17 @@ type Templeton struct {
 	data map[string]string
 }
 
+func ToTile(word string) string {
+	caser := cases.Title(language.English)
+
+	return caser.String(word)
+}
+
 func (ttn *Templeton) Process(ft *FileTemplate) error {
 	funcMap := template.FuncMap{
 		"ToUpper": strings.ToUpper,
 		"ToLower": strings.ToLower,
+		"ToTitle": ToTile,
 	}
 
 	pathTpl, err := template.New(ft.Path).Funcs(funcMap).Delims(ft.Delims[0], ft.Delims[1]).Parse(ft.Path)
