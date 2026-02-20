@@ -9,6 +9,7 @@
 - **Smart Variable Extraction**: Automatically detects required keys from your templates.
 - **Interactive Scaffolding**: Prompts you for missing values if they aren't provided via flags.
 - **Global Templates**: Store common templates in `~/.templeton/` for easy access.
+- **Additional Assets**: If a directory exists next to a template with the same name, its contents are automatically copied to the project root.
 
 ## 🚀 Quick Start
 

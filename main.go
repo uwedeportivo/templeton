@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"os/user"
@@ -100,6 +101,13 @@ func main() {
 		homedir := filepath.Join(usr.HomeDir, ".templeton")
 
 		templateToUse = filepath.Join(homedir, *projectF+".yaml")
+	}
+
+	assetDir := strings.TrimSuffix(templateToUse, ".yaml")
+	if info, err := os.Stat(assetDir); err == nil && info.IsDir() {
+		if err := copyAssets(assetDir, ttn.root); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	file, err := os.ReadFile(templateToUse)
@@ -220,4 +228,42 @@ func collectKeys(node parse.Node, keys map[string]bool) {
 		collectKeys(n.List, keys)
 		collectKeys(n.ElseList, keys)
 	}
+}
+
+func copyAssets(src, dst string) error {
+	if err := os.MkdirAll(dst, 0770); err != nil {
+		return err
+	}
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return nil
+		}
+		target := filepath.Join(dst, rel)
+		if info.IsDir() {
+			return os.MkdirAll(target, 0755)
+		}
+		return copyFile(path, target)
+	})
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
 }
