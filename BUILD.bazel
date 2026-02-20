@@ -1,0 +1,24 @@
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+# gazelle:prefix github.com/uweru/templeton
+gazelle(name = "gazelle")
+
+go_library(
+    name = "templeton_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/uweru/templeton",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_spf13_pflag//:pflag",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+go_binary(
+    name = "templeton",
+    embed = [":templeton_lib"],
+    visibility = ["//visibility:public"],
+)
