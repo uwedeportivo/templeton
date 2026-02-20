@@ -1,3 +1,5 @@
+![Templeton Hero](./header.png)
+
 # 🏗️ Templeton
 
 **Templeton** is a lightweight project scaffolding tool that generates directory structures and files from YAML-based Go templates. It supports both command-line data injection and a smart interactive mode that prompts for missing variables.
