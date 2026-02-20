@@ -1,9 +1,20 @@
-# templeton
+# 🏗️ Templeton
 
-Little utility that generates a project scaffold from a template specification
-in a YAML file.
+**Templeton** is a lightweight project scaffolding tool that generates directory structures and files from YAML-based Go templates. It supports both command-line data injection and a smart interactive mode that prompts for missing variables.
 
-Here is an example specification:
+## ✨ Features
+
+- **YAML-based Specifications**: Define your project structure in a single, readable YAML file.
+- **Dynamic Templating**: Use Go's `text/template` syntax in both file paths and contents.
+- **Smart Variable Extraction**: Automatically detects required keys from your templates.
+- **Interactive Scaffolding**: Prompts you for missing values if they aren't provided via flags.
+- **Global Templates**: Store common templates in `~/.templeton/` for easy access.
+
+## 🚀 Quick Start
+
+### 1. Define a Template
+
+Create a file named `jumping.yaml`:
 
 ```yaml
 - path: "src/{{.Hurdle}}Prose.txt"
@@ -11,27 +22,52 @@ Here is an example specification:
     The quick brown fox jumped over {{.Hurdle}}
 - path: "LICENSE"
   contents: |
-    This is a license.
+    This is a license for the {{.Hurdle}} project.
 ```
 
-Let's say the above contents are in a file called `jumping.yaml`. We can then invoke:
+### 2. Run Templeton
 
-```shell
-templeton --root fence --data Hurdle=Fence --template jumping.yaml
+#### Interactive Mode (Recommended)
+Simply specify the template. Templeton will find `Hurdle` and ask you for its value:
+
+```bash
+templeton --template jumping.yaml --root my-project
+# ✔ Value for Hurdle: fence
 ```
 
-and `templeton` will create the following directory structure:
+#### Command Line Mode
+Provide the data directly via the `--data` flag:
 
-```txt
-fence
-├── src
-│  └── FenceProse.txt
-└── LICENSE
+```bash
+templeton --template jumping.yaml --root my-project --data Hurdle=Fence
 ```
 
-The contents of `FenceProse.txt` has `{{.Hurdle}}` replaced with `Fence` as expected.
+## 📂 Global Templates
 
-Both path names and file contents can be templated.
+You can store templates in `~/.templeton/` and access them using the `--project` flag:
 
-For a more useful example, check out the 
-[Haskell project template](https://github.com/uwedeportivo/project-templates/blob/main/haskell.yaml) I use.
+```bash
+# Looks for ~/.templeton/go-api.yaml
+templeton --project go-api --root my-new-api
+```
+
+## 🛠️ Installation & Building
+
+### Using Bazel
+
+```bash
+bazel build //:templeton
+./bazel-bin/templeton_/templeton --help
+```
+
+### Using Go
+
+```bash
+go build -o templeton .
+./templeton --help
+```
+
+---
+
+> [!TIP]
+> Both path names and file contents support full Go template functionality, including functions like `ToUpper`, `ToLower`, and `ToTitle`.

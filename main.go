@@ -10,6 +10,9 @@ import (
 	"strings"
 	"text/template"
 
+	"text/template/parse"
+
+	"github.com/manifoldco/promptui"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -114,9 +117,100 @@ func main() {
 		if ft.Delims == nil {
 			ft.Delims = []string{"{{", "}}"}
 		}
+	}
+
+	if len(*dataF) == 0 {
+		allKeys := make(map[string]bool)
+		for _, ft := range fts {
+			keys, err := ExtractKeys(ft.Contents, ft.Delims)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, k := range keys {
+				allKeys[k] = true
+			}
+			keys, err = ExtractKeys(ft.Path, ft.Delims)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, k := range keys {
+				allKeys[k] = true
+			}
+		}
+
+		if len(allKeys) > 0 {
+			ttn.data = make(map[string]string)
+			for k := range allKeys {
+				prompt := promptui.Prompt{
+					Label: "Value for " + k,
+				}
+				result, err := prompt.Run()
+				if err != nil {
+					log.Fatal(err)
+				}
+				ttn.data[k] = result
+			}
+		}
+	}
+
+	for _, ft := range fts {
 		err = ttn.Process(ft)
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+func ExtractKeys(tplContent string, delims []string) ([]string, error) {
+	tpl, err := template.New("temp").Delims(delims[0], delims[1]).Parse(tplContent)
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make(map[string]bool)
+	collectKeys(tpl.Tree.Root, keys)
+
+	var result []string
+	for k := range keys {
+		result = append(result, k)
+	}
+	return result, nil
+}
+
+func collectKeys(node parse.Node, keys map[string]bool) {
+	if node == nil {
+		return
+	}
+	switch n := node.(type) {
+	case *parse.ListNode:
+		for _, next := range n.Nodes {
+			collectKeys(next, keys)
+		}
+	case *parse.ActionNode:
+		collectKeys(n.Pipe, keys)
+	case *parse.PipeNode:
+		for _, cmd := range n.Cmds {
+			collectKeys(cmd, keys)
+		}
+	case *parse.CommandNode:
+		for _, arg := range n.Args {
+			collectKeys(arg, keys)
+		}
+	case *parse.FieldNode:
+		if len(n.Ident) > 0 {
+			keys[n.Ident[0]] = true
+		}
+	case *parse.IfNode:
+		collectKeys(n.Pipe, keys)
+		collectKeys(n.List, keys)
+		collectKeys(n.ElseList, keys)
+	case *parse.RangeNode:
+		collectKeys(n.Pipe, keys)
+		collectKeys(n.List, keys)
+		collectKeys(n.ElseList, keys)
+	case *parse.WithNode:
+		collectKeys(n.Pipe, keys)
+		collectKeys(n.List, keys)
+		collectKeys(n.ElseList, keys)
 	}
 }
