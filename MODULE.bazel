@@ -8,11 +8,8 @@ bazel_dep(name = "gazelle", version = "0.47.0")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "2.2.0")
 
-apple_support_cc = use_extension("@apple_support//crosstool:extensions.bzl", "apple_cc_configure_extension")
-use_repo(apple_support_cc, "local_config_apple_cc")
-
-xcode_config = use_extension("@apple_support//configs:extensions.bzl", "xcode_config")
-use_repo(xcode_config, "local_config_xcode")
+apple_support_cc = use_extension("@apple_support//crosstool:setup.bzl", "apple_cc_configure_extension")
+use_repo(apple_support_cc, "local_config_apple_cc", "local_config_apple_cc_toolchains")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.host()
