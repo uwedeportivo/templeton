@@ -103,22 +103,25 @@ func ToTile(word string) string {
 }
 
 func FormatCurrency(v any) string {
-	var f float64
+	var i int64
 	switch val := v.(type) {
 	case string:
-		var err error
-		f, err = strconv.ParseFloat(val, 64)
+		// Parse as float first to handle cases like "2500.00"
+		f, err := strconv.ParseFloat(val, 64)
 		if err != nil {
 			return val
 		}
+		i = int64(f)
 	case float64:
-		f = val
+		i = int64(val)
 	case int:
-		f = float64(val)
+		i = int64(val)
+	case int64:
+		i = val
 	default:
 		return fmt.Sprintf("%v", v)
 	}
-	return fmt.Sprintf("$%.2f", f)
+	return fmt.Sprintf("$%d", i)
 }
 
 func FormatDate(layout string, v any) string {
