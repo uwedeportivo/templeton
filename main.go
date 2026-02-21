@@ -41,6 +41,7 @@ type Variable struct {
 	Description string `yaml:"description"`
 	Default     string `yaml:"default"`
 	Validate    string `yaml:"validate"`
+	Type        string `yaml:"type"`
 }
 
 type Config struct {
@@ -332,6 +333,29 @@ func main() {
 
 			for _, k := range orderedKeys {
 				ttn.data[k] = form.GetString(k)
+			}
+		}
+	}
+
+	// Post-process data based on variable types
+	for k, vMeta := range config.Variables {
+		if vMeta.Type == "list" {
+			if val, ok := ttn.data[k]; ok {
+				parts := strings.Split(val, ",")
+				var items []string
+				for _, p := range parts {
+					p = strings.TrimSpace(p)
+					if p != "" {
+						items = append(items, fmt.Sprintf("%q", p))
+					}
+				}
+				if len(items) == 0 {
+					ttn.data[k] = "()"
+				} else if len(items) == 1 {
+					ttn.data[k] = "(" + items[0] + ",)"
+				} else {
+					ttn.data[k] = "(" + strings.Join(items, ", ") + ")"
+				}
 			}
 		}
 	}

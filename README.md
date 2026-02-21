@@ -80,6 +80,12 @@ You can use formatters in your templates using the pipe (`|`) syntax:
 | :--- | :--- | :--- |
 | `currency` | Formats a number as a currency string with commas. | `{{.Price \| currency}}` → `$1,250` |
 | `date` | Formats a date string using Go's date layout. Use `2nd` for ordinal days. | `{{.Day \| date "January 2nd"}}` → `August 31st` |
+
+### 📋 Variable Types
+
+| Type | Description |
+| :--- | :--- |
+| `list` | Automatically parses comma-separated input into a Typst-formatted list. |
 | `ToUpper` | Converts string to uppercase. | `{{.Name \| ToUpper}}` |
 | `ToLower` | Converts string to lowercase. | `{{.Name \| ToLower}}` |
 | `ToTitle` | Converts string to Title Case. | `{{.Name \| ToTitle}}` |
