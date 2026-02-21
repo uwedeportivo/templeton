@@ -183,7 +183,9 @@ func ExtractKeys(tplContent string, delims []string) ([]string, error) {
 	}
 
 	keys := make(map[string]bool)
-	collectKeys(tpl.Tree.Root, keys)
+	if tpl.Tree != nil && tpl.Tree.Root != nil {
+		collectKeys(tpl.Tree.Root, keys)
+	}
 
 	var result []string
 	for k := range keys {
@@ -198,32 +200,56 @@ func collectKeys(node parse.Node, keys map[string]bool) {
 	}
 	switch n := node.(type) {
 	case *parse.ListNode:
+		if n == nil {
+			return
+		}
 		for _, next := range n.Nodes {
 			collectKeys(next, keys)
 		}
 	case *parse.ActionNode:
+		if n == nil {
+			return
+		}
 		collectKeys(n.Pipe, keys)
 	case *parse.PipeNode:
+		if n == nil {
+			return
+		}
 		for _, cmd := range n.Cmds {
 			collectKeys(cmd, keys)
 		}
 	case *parse.CommandNode:
+		if n == nil {
+			return
+		}
 		for _, arg := range n.Args {
 			collectKeys(arg, keys)
 		}
 	case *parse.FieldNode:
+		if n == nil {
+			return
+		}
 		if len(n.Ident) > 0 {
 			keys[n.Ident[0]] = true
 		}
 	case *parse.IfNode:
+		if n == nil {
+			return
+		}
 		collectKeys(n.Pipe, keys)
 		collectKeys(n.List, keys)
 		collectKeys(n.ElseList, keys)
 	case *parse.RangeNode:
+		if n == nil {
+			return
+		}
 		collectKeys(n.Pipe, keys)
 		collectKeys(n.List, keys)
 		collectKeys(n.ElseList, keys)
 	case *parse.WithNode:
+		if n == nil {
+			return
+		}
 		collectKeys(n.Pipe, keys)
 		collectKeys(n.List, keys)
 		collectKeys(n.ElseList, keys)
