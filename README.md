@@ -78,8 +78,8 @@ You can use formatters in your templates using the pipe (`|`) syntax:
 
 | Formatter | Description | Example |
 | :--- | :--- | :--- |
-| `currency` | Formats a number as a currency string. | `{{.Price \| currency}}` → `$1,250.00` |
-| `date` | Formats a date string using Go's date layout. | `{{.Day \| date "Jan 02"}}` → `Jan 01` |
+| `currency` | Formats a number as a currency string with commas. | `{{.Price \| currency}}` → `$1,250` |
+| `date` | Formats a date string using Go's date layout. Use `2nd` for ordinal days. | `{{.Day \| date "January 2nd"}}` → `August 31st` |
 | `ToUpper` | Converts string to uppercase. | `{{.Name \| ToUpper}}` |
 | `ToLower` | Converts string to lowercase. | `{{.Name \| ToLower}}` |
 | `ToTitle` | Converts string to Title Case. | `{{.Name \| ToTitle}}` |

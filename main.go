@@ -147,7 +147,31 @@ func FormatDate(layout string, v any) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+
+	if strings.Contains(layout, "2nd") {
+		ordinal := getOrdinal(t.Day())
+		layout = strings.Replace(layout, "2nd", "2<ORD>", 1)
+		res := t.Format(layout)
+		return strings.Replace(res, "<ORD>", ordinal, 1)
+	}
+
 	return t.Format(layout)
+}
+
+func getOrdinal(n int) string {
+	if n >= 11 && n <= 13 {
+		return "th"
+	}
+	switch n % 10 {
+	case 1:
+		return "st"
+	case 2:
+		return "nd"
+	case 3:
+		return "rd"
+	default:
+		return "th"
+	}
 }
 
 func (ttn *Templeton) funcMap() template.FuncMap {
