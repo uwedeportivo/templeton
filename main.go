@@ -129,27 +129,30 @@ func main() {
 	}
 
 	if len(*dataF) == 0 {
-		allKeys := make(map[string]bool)
+		var orderedKeys []string
+		seenKeys := make(map[string]bool)
 		for _, ft := range fts {
-			keys, err := ExtractKeys(ft.Contents, ft.Delims)
+			contentsKeys, err := ExtractKeys(ft.Contents, ft.Delims)
 			if err != nil {
 				log.Fatal(err)
 			}
-			for _, k := range keys {
-				allKeys[k] = true
-			}
-			keys, err = ExtractKeys(ft.Path, ft.Delims)
+			pathKeys, err := ExtractKeys(ft.Path, ft.Delims)
 			if err != nil {
 				log.Fatal(err)
 			}
-			for _, k := range keys {
-				allKeys[k] = true
+
+			allKeysForFile := append(contentsKeys, pathKeys...)
+			for _, k := range allKeysForFile {
+				if !seenKeys[k] {
+					seenKeys[k] = true
+					orderedKeys = append(orderedKeys, k)
+				}
 			}
 		}
 
-		if len(allKeys) > 0 {
+		if len(orderedKeys) > 0 {
 			ttn.data = make(map[string]string)
-			for k := range allKeys {
+			for _, k := range orderedKeys {
 				prompt := promptui.Prompt{
 					Label: "Value for " + k,
 				}
@@ -182,19 +185,23 @@ func ExtractKeys(tplContent string, delims []string) ([]string, error) {
 		return nil, err
 	}
 
-	keys := make(map[string]bool)
-	if tpl.Tree != nil && tpl.Tree.Root != nil {
-		collectKeys(tpl.Tree.Root, keys)
+	var orderedKeys []string
+	seen := make(map[string]bool)
+	fn := func(k string) {
+		if !seen[k] {
+			seen[k] = true
+			orderedKeys = append(orderedKeys, k)
+		}
 	}
 
-	var result []string
-	for k := range keys {
-		result = append(result, k)
+	if tpl.Tree != nil && tpl.Tree.Root != nil {
+		collectKeys(tpl.Tree.Root, fn)
 	}
-	return result, nil
+
+	return orderedKeys, nil
 }
 
-func collectKeys(node parse.Node, keys map[string]bool) {
+func collectKeys(node parse.Node, addKey func(string)) {
 	if node == nil {
 		return
 	}
@@ -204,55 +211,55 @@ func collectKeys(node parse.Node, keys map[string]bool) {
 			return
 		}
 		for _, next := range n.Nodes {
-			collectKeys(next, keys)
+			collectKeys(next, addKey)
 		}
 	case *parse.ActionNode:
 		if n == nil {
 			return
 		}
-		collectKeys(n.Pipe, keys)
+		collectKeys(n.Pipe, addKey)
 	case *parse.PipeNode:
 		if n == nil {
 			return
 		}
 		for _, cmd := range n.Cmds {
-			collectKeys(cmd, keys)
+			collectKeys(cmd, addKey)
 		}
 	case *parse.CommandNode:
 		if n == nil {
 			return
 		}
 		for _, arg := range n.Args {
-			collectKeys(arg, keys)
+			collectKeys(arg, addKey)
 		}
 	case *parse.FieldNode:
 		if n == nil {
 			return
 		}
 		if len(n.Ident) > 0 {
-			keys[n.Ident[0]] = true
+			addKey(n.Ident[0])
 		}
 	case *parse.IfNode:
 		if n == nil {
 			return
 		}
-		collectKeys(n.Pipe, keys)
-		collectKeys(n.List, keys)
-		collectKeys(n.ElseList, keys)
+		collectKeys(n.Pipe, addKey)
+		collectKeys(n.List, addKey)
+		collectKeys(n.ElseList, addKey)
 	case *parse.RangeNode:
 		if n == nil {
 			return
 		}
-		collectKeys(n.Pipe, keys)
-		collectKeys(n.List, keys)
-		collectKeys(n.ElseList, keys)
+		collectKeys(n.Pipe, addKey)
+		collectKeys(n.List, addKey)
+		collectKeys(n.ElseList, addKey)
 	case *parse.WithNode:
 		if n == nil {
 			return
 		}
-		collectKeys(n.Pipe, keys)
-		collectKeys(n.List, keys)
-		collectKeys(n.ElseList, keys)
+		collectKeys(n.Pipe, addKey)
+		collectKeys(n.List, addKey)
+		collectKeys(n.ElseList, addKey)
 	}
 }
 
