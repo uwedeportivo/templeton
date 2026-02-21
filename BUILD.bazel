@@ -15,6 +15,7 @@ go_library(
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@org_golang_x_text//cases",
         "@org_golang_x_text//language",
+        "@org_golang_x_text//message",
     ],
 )
 

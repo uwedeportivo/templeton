@@ -20,6 +20,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"gopkg.in/yaml.v3"
 )
 
@@ -121,7 +122,8 @@ func FormatCurrency(v any) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
-	return fmt.Sprintf("$%d", i)
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("$%d", i)
 }
 
 func FormatDate(layout string, v any) string {
