@@ -3,17 +3,20 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"text/template/parse"
 
-	"github.com/manifoldco/promptui"
+	"github.com/charmbracelet/huh"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -28,9 +31,64 @@ var (
 )
 
 type FileTemplate struct {
-	Path     string
-	Contents string
-	Delims   []string
+	Path     string   `yaml:"path"`
+	Contents string   `yaml:"contents"`
+	Delims   []string `yaml:"delims"`
+}
+
+type Variable struct {
+	Description string `yaml:"description"`
+	Default     string `yaml:"default"`
+	Validate    string `yaml:"validate"`
+}
+
+type Config struct {
+	Variables map[string]Variable `yaml:"variables"`
+	Templates []*FileTemplate     `yaml:"templates"`
+}
+
+func (v Variable) Validators() []func(string) error {
+	var validators []func(string) error
+	specs := strings.Split(v.Validate, ",")
+	for _, spec := range specs {
+		spec = strings.TrimSpace(spec)
+		switch spec {
+		case "required":
+			validators = append(validators, func(s string) error {
+				if strings.TrimSpace(s) == "" {
+					return errors.New("this field is required")
+				}
+				return nil
+			})
+		case "number":
+			validators = append(validators, func(s string) error {
+				if s == "" {
+					return nil
+				}
+				_, err := strconv.ParseFloat(s, 64)
+				if err != nil {
+					return errors.New("must be a valid number")
+				}
+				return nil
+			})
+		case "date":
+			validators = append(validators, func(s string) error {
+				if s == "" {
+					return nil
+				}
+				layouts := []string{"2006-01-02", "01/02/2006", "02/01/2006"}
+				var err error
+				for _, l := range layouts {
+					_, err = time.Parse(l, s)
+					if err == nil {
+						return nil
+					}
+				}
+				return errors.New("must be a valid date (YYYY-MM-DD)")
+			})
+		}
+	}
+	return validators
 }
 
 type Templeton struct {
@@ -44,13 +102,62 @@ func ToTile(word string) string {
 	return caser.String(word)
 }
 
-func (ttn *Templeton) Process(ft *FileTemplate) error {
-	funcMap := template.FuncMap{
-		"ToUpper": strings.ToUpper,
-		"ToLower": strings.ToLower,
-		"ToTitle": ToTile,
-		"split":   strings.Split,
+func FormatCurrency(v any) string {
+	var f float64
+	switch val := v.(type) {
+	case string:
+		var err error
+		f, err = strconv.ParseFloat(val, 64)
+		if err != nil {
+			return val
+		}
+	case float64:
+		f = val
+	case int:
+		f = float64(val)
+	default:
+		return fmt.Sprintf("%v", v)
 	}
+	return fmt.Sprintf("$%.2f", f)
+}
+
+func FormatDate(layout string, v any) string {
+	var t time.Time
+	var err error
+	switch val := v.(type) {
+	case string:
+		// Try a few common formats
+		layouts := []string{"2006-01-02", "01/02/2006", "02/01/2006", time.RFC3339}
+		for _, l := range layouts {
+			t, err = time.Parse(l, val)
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			return val
+		}
+	case time.Time:
+		t = val
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+	return t.Format(layout)
+}
+
+func (ttn *Templeton) funcMap() template.FuncMap {
+	return template.FuncMap{
+		"ToUpper":  strings.ToUpper,
+		"ToLower":  strings.ToLower,
+		"ToTitle":  ToTile,
+		"split":    strings.Split,
+		"currency": FormatCurrency,
+		"date":     FormatDate,
+	}
+}
+
+func (ttn *Templeton) Process(ft *FileTemplate) error {
+	funcMap := ttn.funcMap()
 
 	pathTpl, err := template.New(ft.Path).Funcs(funcMap).Delims(ft.Delims[0], ft.Delims[1]).Parse(ft.Path)
 	if err != nil {
@@ -115,13 +222,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var fts []*FileTemplate
-	err = yaml.Unmarshal(file, &fts)
-
-	if err != nil {
-		log.Fatal(err)
+	var config Config
+	err = yaml.Unmarshal(file, &config)
+	if err != nil || len(config.Templates) == 0 {
+		// Fallback to old format
+		var oldTemplates []*FileTemplate
+		err = yaml.Unmarshal(file, &oldTemplates)
+		if err != nil {
+			log.Fatal(err)
+		}
+		config.Templates = oldTemplates
 	}
 
+	fts := config.Templates
 	for _, ft := range fts {
 		if ft.Delims == nil {
 			ft.Delims = []string{"{{", "}}"}
@@ -152,15 +265,44 @@ func main() {
 
 		if len(orderedKeys) > 0 {
 			ttn.data = make(map[string]string)
+			var fields []huh.Field
 			for _, k := range orderedKeys {
-				prompt := promptui.Prompt{
-					Label: "Value for " + k,
+				input := huh.NewInput().
+					Title("Value for " + k).
+					Key(k)
+
+				if varMeta, ok := config.Variables[k]; ok {
+					if varMeta.Description != "" {
+						input.Description(varMeta.Description)
+					}
+					if varMeta.Default != "" {
+						input.Value(&varMeta.Default)
+					}
+					validators := varMeta.Validators()
+					if len(validators) > 0 {
+						input.Validate(func(s string) error {
+							for _, v := range validators {
+								if err := v(s); err != nil {
+									return err
+								}
+							}
+							return nil
+						})
+					}
+				} else {
+					input.Description(k)
 				}
-				result, err := prompt.Run()
-				if err != nil {
-					log.Fatal(err)
-				}
-				ttn.data[k] = result
+				fields = append(fields, input)
+			}
+
+			form := huh.NewForm(huh.NewGroup(fields...).Title("Template Variables"))
+			err = form.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			for _, k := range orderedKeys {
+				ttn.data[k] = form.GetString(k)
 			}
 		}
 	}
@@ -174,13 +316,8 @@ func main() {
 }
 
 func ExtractKeys(tplContent string, delims []string) ([]string, error) {
-	funcMap := template.FuncMap{
-		"ToUpper": strings.ToUpper,
-		"ToLower": strings.ToLower,
-		"ToTitle": ToTile,
-		"split":   strings.Split,
-	}
-	tpl, err := template.New("temp").Funcs(funcMap).Delims(delims[0], delims[1]).Parse(tplContent)
+	ttn := &Templeton{}
+	tpl, err := template.New("temp").Funcs(ttn.funcMap()).Delims(delims[0], delims[1]).Parse(tplContent)
 	if err != nil {
 		return nil, err
 	}

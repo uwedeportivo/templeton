@@ -45,6 +45,56 @@ Provide the data directly via the `--data` flag:
 templeton --template jumping.yaml --root my-project --data Hurdle=Fence
 ```
 
+## 🏗️ Advanced Template Format
+
+Templeton supports a more advanced YAML format that allows you to define variable metadata, input validation, and template-wide settings.
+
+### Enhanced `template.yaml`
+
+```yaml
+variables:
+  ProjectName:
+    description: "The name of the new project"
+    default: "my-cool-app"
+    validate: "required"
+  Rent:
+    description: "Monthly rent amount"
+    validate: "required,number"
+  StartDate:
+    description: "Lease start date (YYYY-MM-DD)"
+    validate: "required,date"
+
+templates:
+  - path: "src/{{.ProjectName}}/config.txt"
+    contents: |
+      Project: {{.ProjectName}}
+      Monthly Rent: {{.Rent | currency}}
+      Starts on: {{.StartDate | date "January 2, 2006"}}
+```
+
+### 🛠️ Formatters
+
+You can use formatters in your templates using the pipe (`|`) syntax:
+
+| Formatter | Description | Example |
+| :--- | :--- | :--- |
+| `currency` | Formats a number as a currency string. | `{{.Price \| currency}}` → `$1,250.00` |
+| `date` | Formats a date string using Go's date layout. | `{{.Day \| date "Jan 02"}}` → `Jan 01` |
+| `ToUpper` | Converts string to uppercase. | `{{.Name \| ToUpper}}` |
+| `ToLower` | Converts string to lowercase. | `{{.Name \| ToLower}}` |
+| `ToTitle` | Converts string to Title Case. | `{{.Name \| ToTitle}}` |
+| `split` | Splits a string into an array. | `{{range (split .List ",")}}...{{end}}` |
+
+### ✅ Validators
+
+Validators can be added to the `validate` field in the `variables` section (comma-separated):
+
+| Validator | Description |
+| :--- | :--- |
+| `required` | Ensures the field is not empty. |
+| `number` | Ensures the input is a valid number. |
+| `date` | Ensures the input is a valid date (YYYY-MM-DD, MM/DD/YYYY). |
+
 ## 📂 Global Templates
 
 You can store templates in `~/.templeton/` and access them using the `--project` flag:

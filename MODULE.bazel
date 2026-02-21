@@ -17,13 +17,31 @@ go_sdk.host()
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
 go_deps.module(
-    path = "github.com/manifoldco/promptui",
-    sum = "h1:3V4HzJk1TtXW1MTZMP7mdlwbBpIinw3HztaIlYthEiA=",
-    version = "v0.9.0",
+    path = "github.com/charmbracelet/huh",
+    sum = "h1:Xz/Pm2h64cXQZn/Jvele4J3r7DDiqFCNIVteYukxDvY=",
+    version = "v0.8.0",
+)
+go_deps.module(
+    path = "github.com/charmbracelet/bubbles",
+    sum = "h1:JFgG/xnwFfbezlUnFMJy0nusZvytYysV4SCS2cYbvws=",
+    version = "v0.21.1-0.20250623103423-23b8fd6302d7",
+)
+go_deps.module(
+    path = "github.com/charmbracelet/bubbletea",
+    sum = "h1:VkHIxPJQeDt0aFJIsVxw8BQdh/F/L2KKZGsK6et5taU=",
+    version = "v1.3.6",
+)
+go_deps.module(
+    path = "github.com/charmbracelet/lipgloss",
+    sum = "h1:vYXsiLHVkK7fp74RkV7b2kq9+zDLoEU4MZoFqR/noCY=",
+    version = "v1.1.0",
 )
 use_repo(
     go_deps,
-    "com_github_manifoldco_promptui",
+    "com_github_charmbracelet_bubbles",
+    "com_github_charmbracelet_bubbletea",
+    "com_github_charmbracelet_huh",
+    "com_github_charmbracelet_lipgloss",
     "com_github_spf13_pflag",
     "in_gopkg_yaml_v3",
     "org_golang_x_text",
