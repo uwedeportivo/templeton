@@ -112,6 +112,12 @@ templeton --project go-api --root my-new-api
 
 ## 🛠️ Installation & Building
 
+### Using go install
+
+```bash
+go install github.com/uwedeportivo/templeton@latest
+```
+
 ### Using Bazel
 
 ```bash

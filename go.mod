@@ -1,4 +1,4 @@
-module templeton
+module github.com/uwedeportivo/templeton
 
 go 1.26.1
 

@@ -1,13 +1,13 @@
 load("@gazelle//:def.bzl", "gazelle")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
-# gazelle:prefix github.com/uweru/templeton
+# gazelle:prefix github.com/uwedeportivo/templeton
 gazelle(name = "gazelle")
 
 go_library(
     name = "templeton_lib",
     srcs = ["main.go"],
-    importpath = "github.com/uweru/templeton",
+    importpath = "github.com/uwedeportivo/templeton",
     visibility = ["//visibility:private"],
     deps = [
         "@com_github_charmbracelet_huh//:huh",
